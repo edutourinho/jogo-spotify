@@ -36,8 +36,8 @@ async function loadAllTracks() {
 
 // Substitua com suas credenciais e a URL de redirecionamento configurada
 const spotifyApi = new SpotifyWebApi({
-  clientId: '2043a83d8538426081beb9f278a53b8a',
-  clientSecret: '2961d5442c4e420fae65eb5b3796d63a',
+  clientId: 'CLIENT_ID', //substituir pelo client_id
+  clientSecret: 'CLIENT_SECRET', //substituir pelo client_secret
   redirectUri: 'http://localhost:5000/callback'
 });
 
