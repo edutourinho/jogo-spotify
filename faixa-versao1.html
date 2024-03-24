@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #fcfaed;
+      }
+   
+   .header {
+  background-color: #8c1d6b;
+  color: #fff;
+  display: flex; /* Ativa o Flexbox */
+  align-items: center; /* Alinha verticalmente os itens no centro */
+  justify-content: center; /* Centraliza os itens horizontalmente */
+  }
+
+.header img {
+  margin-right: 20px; /* Espaço entre a imagem e o texto */
+  margin-left: 20px;
+}
+.text-container {
+  display: flex; /* Ativa o Flexbox */
+  flex-direction: column; /* Organiza os itens em coluna */
+}
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(75vh - 2px);
+      }
+      .form-container {
+        background-color: #fff;
+        padding: 5px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        text-align: center; /* Centraliza o texto horizontalmente */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .footer {
+        background-color: #f5f5f5;
+        color: #212529;
+        font-family: Arial, sans-serif;
+        font-size: 10px;
+        padding: 8px;
+        text-align: left;
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+      }
+      .nav-button {
+    font-size: 18px; 
+      }
+
+
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <img src="imagem.webp" width="350" alt="My Image">
+      <div class="text-container">
+        <div style="text-align: center">
+      <h1>Jogo de adivinhar a música do Papai!!</h1>
+      
+    </div></div>
+    <img src="imagem.webp" width="350" alt="My Image">
+    </div>
+    <div class="container">
+      <div id="score">Pontuação: 0</div>
+        <audio id="audioPlayer" controls></audio>
+        <div id="infoFaixa">
+            Carregando faixa...
+        </div>
+        <div id="optionsContainer"></div></div>
+        <script>
+          let pontuacao = 0;
+          let rodadas = 0;
+          const maxRodadas = 15;
+          async function carregarFaixa() {
+            if (rodadas >= maxRodadas) {
+      // Mostrar pontuação final ou redirecionar para uma tela de conclusão
+      alert('Jogo finalizado! Sua pontuação final: ' + pontuacao);
+      // Pode redirecionar para uma tela de início ou recarregar a página
+      return;
+    }
+
+            try {
+              const resposta = await fetch('/random-song');
+              const dadosDaFaixa = await resposta.json();
+        
+              const audioPlayer = document.getElementById('audioPlayer');
+              const infoFaixaElemento = document.getElementById('infoFaixa');
+              const optionsContainer = document.getElementById('optionsContainer');
+              let temporizador;
+    let reproducoes = 0; // Resetar a contagem de reproduções
+
+    if (dadosDaFaixa && dadosDaFaixa.correctTrack && dadosDaFaixa.correctTrack.track) {
+      audioPlayer.src = dadosDaFaixa.correctTrack.track.preview_url;
+
+      audioPlayer.onplay = () => {
+        if (reproducoes < 3) {
+          clearTimeout(temporizador); // Limpar temporizador anterior
+          temporizador = setTimeout(() => {
+            if (audioPlayer.currentTime < 10) {
+              audioPlayer.pause();
+              audioPlayer.currentTime = 0;
+            }
+          }, 4000); // 4 segundos
+          reproducoes++; // Incrementar contagem de reprodução
+        } else {
+          audioPlayer.pause(); // Parar reprodução se atingir o limite
+          alert('Limite de 3 reproduções atingido.');
+        }
+      };
+    // Configuração das opções de resposta
+    if (dadosDaFaixa.answerOptions) {
+        optionsContainer.innerHTML = ''; // Limpa opções anteriores
+        dadosDaFaixa.answerOptions.forEach(option => {
+            let button = document.createElement('button');
+            button.innerText = option;
+            button.addEventListener('click', () => verificarResposta(option, dadosDaFaixa.correctTrack.track.name));
+            optionsContainer.appendChild(button);
+        });
+    }
+              } else {
+                infoFaixaElemento.innerText = 'Não foi possível carregar a faixa.';
+              }
+            } catch (error) {
+              console.error('Erro ao carregar faixa:', error);
+              infoFaixaElemento.innerText = 'Erro ao carregar faixa.';
+            }
+          }
+        
+          function verificarResposta(escolha, respostaCorreta) {
+            let mensagemFeedback
+            if (escolha === respostaCorreta) {
+              pontuacao += 5; // Adiciona 5 pontos para resposta correta
+      mensagemFeedback = 'Correto! ';
+    } else {
+      mensagemFeedback = 'Incorreto. A resposta correta era: ' + respostaCorreta;
+    }
+
+    // Atualiza e mostra a pontuação
+    mensagemFeedback += ' Sua pontuação: ' + pontuacao;
+    alert(mensagemFeedback);
+    document.getElementById('score').innerText = 'Pontuação: ' + pontuacao;
+    rodadas++;
+    carregarFaixa();
+
+            }
+          
+        
+          window.onload = carregarFaixa;
+        </script>
+        
+          
+</body>
+</html>

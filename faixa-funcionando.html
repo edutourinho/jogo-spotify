@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jogo de Adivinhar Músicas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fcfaed;
+            text-align: center;
+        }
+        .header {
+            background-color: #8c1d6b;
+            color: #fff;
+            padding: 10px 0;
+        }
+        .header h1 {
+            margin: 0;
+        }
+        #score {
+            font-size: 20px;
+            color: #333;
+            margin: 15px 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        audio {
+            width: 100%;
+            margin-top: 15px;
+        }
+        .options-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .option-column {
+            display: flex;
+            flex-direction: column;
+            width: 45%;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #8c1d6b;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #a24a85;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Jogo de Adivinhar a Música do Papai!!</h1>
+    </div>
+
+    <div class="container">
+        <div id="score">Pontuação: 0</div>
+        <audio id="audioPlayer" controls></audio>
+        <div id="infoFaixa">Carregando faixa...</div>
+        <div class="options-container">
+            <div id="trackOptions" class="option-column"></div>
+            <div id="artistOptions" class="option-column"></div>
+        </div>
+    </div>
+
+    <script>
+        let pontuacao = 0;
+let rodadas = 0;
+let escolhaMusica = null;
+let escolhaArtista = null;
+let respondeuMusica = false;
+let respondeuArtista = false;
+let dadosDaFaixa = null; // Declaração global da variável dadosDaFaixa
+const maxRodadas = 15;
+let playedTracks = new Set();
+
+async function carregarFaixa() {
+  if (rodadas >= maxRodadas) {
+    alert('Jogo finalizado! Sua pontuação final: ' + pontuação);
+    playedTracks.clear(); // Limpar o conjunto para a próxima partida
+    return;
+  }
+
+  try {
+    dadosDaFaixa;
+    do {
+      const resposta = await fetch('/random-song');
+      dadosDaFaixa = await resposta.json();
+    } while (playedTracks.has(dadosDaFaixa.correctTrack.id));
+
+    playedTracks.add(dadosDaFaixa.correctTrack.id); // Adicionar a faixa atual ao conjunto
+
+    const audioPlayer = document.getElementById('audioPlayer');
+    let temporizador;
+    let reproducoes = 0; // Contador de reproduções
+
+    if (dadosDaFaixa.correctTrack.preview_url) {
+        audioPlayer.src = dadosDaFaixa.correctTrack.preview_url;
+
+        audioPlayer.onplay = () => {
+            if (reproducoes < 3) {
+                clearTimeout(temporizador); // Limpa o temporizador anterior
+                temporizador = setTimeout(() => {
+                    if (audioPlayer.currentTime < 10) {
+                        audioPlayer.pause();
+                        audioPlayer.currentTime = 0;
+                    }
+                }, 4000); // 4 segundos
+                reproducoes++; // Incrementa o contador de reprodução
+            } else {
+                audioPlayer.pause(); // Para a reprodução ao atingir o limite
+                alert('Limite de 3 reproduções atingido.');
+            }
+        };
+    } else {
+        console.log("Prévia da faixa não disponível.");
+        audioPlayer.src = '';
+    }
+    const trackOptionsContainer = document.getElementById('trackOptions');
+    const artistOptionsContainer = document.getElementById('artistOptions');
+
+    // Resetar as variáveis e conteúdos
+    respondeuMusica = false;
+    respondeuArtista = false;
+    escolhaMusica = null;
+    escolhaArtista = null;
+    trackOptionsContainer.innerHTML = '';
+    artistOptionsContainer.innerHTML = '';
+
+    dadosDaFaixa.trackOptions.forEach(option => {
+      let button = document.createElement('button');
+      button.innerText = option;
+      button.addEventListener('click', () => escolherOpcao(option, 'track'));
+      trackOptionsContainer.appendChild(button);
+    });
+
+    dadosDaFaixa.artistOptions.forEach(option => {
+      let button = document.createElement('button');
+      button.innerText = option;
+      button.addEventListener('click', () => escolherOpcao(option, 'artist'));
+      artistOptionsContainer.appendChild(button);
+    });
+
+  } catch (error) {
+    console.error('Erro ao carregar faixa:', error);
+  }
+}
+
+
+function escolherOpcao(escolha, tipo) {
+    console.log("Escolha:", escolha, "Tipo:", tipo);
+  if (tipo === 'track') {
+    escolhaMusica = escolha;
+    respondeuMusica = true;
+  } else if (tipo === 'artist') {
+    escolhaArtista = escolha;
+    respondeuArtista = true;
+  }
+
+  if (respondeuMusica && respondeuArtista) {
+    verificarResposta();
+  }
+}
+
+function verificarResposta() {
+  let pontosGanhos = 0;
+  let mensagemFeedback = '';
+
+  if (escolhaMusica === dadosDaFaixa.correctTrack.name) {
+    pontosGanhos += 5;
+    mensagemFeedback += 'Acertou a música! ';
+  }
+
+  // Ajuste para extrair o nome do artista
+  const nomeArtista = dadosDaFaixa.correctTrack.artists[0].name;
+
+  if (escolhaArtista === nomeArtista) {
+    pontosGanhos += 5;
+    mensagemFeedback += 'Acertou o artista! ';
+  }
+
+  if (pontosGanhos === 0) {
+    mensagemFeedback = 'Errou ambas. ';
+  }
+
+  pontuacao += pontosGanhos;
+  mensagemFeedback += 'Sua pontuação: ' + pontuacao;
+  alert(mensagemFeedback);
+  document.getElementById('score').innerText = 'Pontuação: ' + pontuacao;
+
+  rodadas++;
+  carregarFaixa();
+}
+
+
+window.onload = carregarFaixa;
+
+      </script>
+      
+</body>
+</html>
