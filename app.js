@@ -7,8 +7,8 @@ const PORT = process.env.PORT || 5000;
 
 // Substitua com suas credenciais e a URL de redirecionamento configurada
 const spotifyApi = new SpotifyWebApi({
-  clientId: '8b9f13e5e0424dff876e1015acf7dfb9',
-  clientSecret: 'd515d8a6c2f2462e98f4b7608259343e',
+  clientId: 'CLIENT_ID',
+  clientSecret: 'CLIENT_SECRET',
   redirectUri: 'http://localhost:5000/callback'
 });
 
